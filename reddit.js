@@ -1,9 +1,12 @@
 import fetch from "node-fetch";
 import ffmpeg from "fluent-ffmpeg";
-import { path } from "@ffmpeg-installer/ffmpeg";
+import { path as ffmpegPath } from "@ffmpeg-installer/ffmpeg";
+import path from "path";
 import fs from "fs";
 
-ffmpeg.setFfmpegPath(path);
+import { DOWNLOADS_FOLDER } from "./utils.js";
+
+ffmpeg.setFfmpegPath(ffmpegPath);
 
 const resolutions = ["1080", "720", "480", "360", "240", "96"];
 
@@ -92,7 +95,8 @@ export async function downloadVideo({ url, resolution, includeAudio = true }) {
   }
 
   const randomId = Math.random().toString(36).substring(7);
-  const outputFile = `./downloads/${randomId}.mp4`;
+  const fileName = `${randomId}.mp4`;
+  const outputFile = path.join(DOWNLOADS_FOLDER, fileName);
   const downloader = ffmpeg();
   const resolutions = getAvailableResolutions(videoInfo);
 
@@ -100,7 +104,7 @@ export async function downloadVideo({ url, resolution, includeAudio = true }) {
 
   if (!resolutions.includes(resolution)) throw new Error("Invalid resolution");
 
-  if (!fs.existsSync("./downloads")) fs.mkdirSync("./downloads");
+  if (!fs.existsSync(DOWNLOADS_FOLDER)) fs.mkdirSync(DOWNLOADS_FOLDER);
 
   downloader.output(outputFile).addInput(extractVideoUrl(videoInfo, resolution));
 
@@ -115,7 +119,7 @@ export async function downloadVideo({ url, resolution, includeAudio = true }) {
     downloader
       .on("end", () => {
         console.log("downloaded");
-        resolve(outputFile);
+        resolve(fileName);
       })
       .on("error", (err) => {
         console.log(err);
